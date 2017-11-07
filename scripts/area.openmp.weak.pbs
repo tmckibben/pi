@@ -1,0 +1,23 @@
+#!/bin/bash
+#PBS -q express
+#PBS -l nodes=1:ppn=12
+#PBS -l walltime=10:00
+#PBS -j oe
+
+cd $PBS_O_WORKDIR
+
+if [ -e ../data/openmp-weak.csv ]; then
+    rm ../data/openmp-weak.csv
+fi
+
+# Weak scaling
+for thread in $(seq 1 12)
+do
+  export OMP_NUM_THREADS=$thread
+  export NUM_RECT=$(echo "100000000*$thread" | bc)
+  (time ./area.openmp -l 0.0 -r 10.0 -n $NUM_RECT) &> ../data/openmpw.raw
+  echo -n "1,$thread,$thread,$NUM_RECT," >> ../data/openmp-weak.csv
+  bash csvtime.sh ../data/openmpw.raw >> ../data/openmp-weak.csv
+  rm ../data/openmpw.raw
+  echo "$NUM_RECT rectangles completed!"
+done

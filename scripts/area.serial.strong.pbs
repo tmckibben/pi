@@ -1,0 +1,17 @@
+#!/bin/bash
+#PBS -q express
+#PBS -l nodes=1:ppn=1
+#PBS -l walltime=10:00
+#PBS -j oe
+
+cd $PBS_O_WORKDIR
+
+if [ -e ../data/serial-strong.csv ]; then
+    rm ../data/serial-strong.csv
+fi
+
+(time ./area.serial -l 0.0 -r 10.0 -n 100000000) &> ../data/serials.raw
+echo -n '1,1,1,100000000,' > ../data/serial-strong.csv
+bash csvtime.sh ../data/serials.raw >> ../data/serial-strong.csv
+rm ../data/serials.raw
+echo 'Job completed successfully!'

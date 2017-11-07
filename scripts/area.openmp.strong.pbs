@@ -1,0 +1,22 @@
+#!/bin/bash
+#PBS -q express
+#PBS -l nodes=1:ppn=12
+#PBS -l walltime=10:00
+#PBS -j oe
+
+cd $PBS_O_WORKDIR
+
+if [ -e ../data/openmp-strong.csv ]; then
+    rm ../data/openmp-strong.csv
+fi
+
+# Strong scaling
+for thread in $(seq 1 12)
+do
+  export OMP_NUM_THREADS=$thread
+  (time ./area.openmp -l 0.0 -r 10.0 -n 100000000) &> ../data/openmps.raw
+  echo -n "1,$thread,$thread,100000000," >> ../data/openmp-strong.csv
+  bash csvtime.sh ../data/openmps.raw >> ../data/openmp-strong.csv
+  rm ../data/openmps.raw
+  echo "$thread thread(s) completed!"
+done

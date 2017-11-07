@@ -1,0 +1,28 @@
+#!/bin/bash
+#PBS -q express
+#PBS -l nodes=2:ppn=12
+#PBS -l walltime=10:00
+#PBS -j oe
+
+cd $PBS_O_WORKDIR
+module load openmpi-1.4
+
+if [ -e ../data/hybrid-weak.csv ]; then
+    rm ../data/hybrid-weak.csv
+fi
+
+# Weak scaling
+for node in $(seq 1 2)
+do
+  for thread in $(seq 1 12)
+  do
+    export OMP_NUM_THREADS=$thread
+    export NUM_CORES=$(echo "$node*$thread" | bc)
+    export NUM_RECT=$(echo "100000000*$NUM_CORES" | bc)
+    (time mpirun -n $node -machinefile $PBS_NODEFILE ./area.hybrid -l 0.0 -r 10.0 -n $NUM_RECT) &> ../data/hybridw.raw
+    echo -n "$node,$thread,$NUM_CORES,$NUM_RECT," >> ../data/hybrid-weak.csv
+    bash csvtime.sh ../data/hybridw.raw >> ../data/hybrid-weak.csv
+    rm ../data/hybridw.raw
+    echo -e "\n$node node(s), $thread thread(s) completed!"
+  done
+done

@@ -1,0 +1,21 @@
+#!/bin/bash
+#PBS -q express
+#PBS -l nodes=1:ppn=1
+#PBS -l walltime=10:00
+#PBS -j oe
+
+cd $PBS_O_WORKDIR
+
+if [ -e ../data/serial-weak.csv ]; then
+    rm ../data/serial-weak.csv
+fi
+
+for i in $(seq 1 4)
+do
+  export NUM_RECT=$(echo "100000000*$i" | bc)
+  (time ./area.serial -l 0.0 -r 10.0 -n $NUM_RECT) &> ../data/serialw.raw
+  echo -n "1,1,1,$NUM_RECT," >> ../data/serial-weak.csv
+  bash csvtime.sh ../data/serialw.raw >> ../data/serial-weak.csv
+  rm ../data/serialw.raw
+  echo "$NUM_RECT rectangles completed successfully!"
+done
